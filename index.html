@@ -16,34 +16,36 @@
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: sans-serif; }
         body { background: var(--bg); color: var(--text-white); height: 100vh; overflow: hidden; }
 
-        /* Screens Layout */
         .full-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg); z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; text-align: center; }
         .hidden { display: none !important; }
 
-        /* Auth UI */
         .form-container { width: 100%; max-width: 320px; background: var(--header); padding: 25px; border-radius: 15px; border: 1px solid var(--border); }
         .btn { width: 100%; max-width: 280px; padding: 14px; border: none; border-radius: 30px; font-size: 16px; font-weight: bold; cursor: pointer; margin-bottom: 15px; }
         .btn-green { background: var(--wa-green); color: white; }
         .btn-outline { background: var(--search-bar); color: white; }
         input { width: 100%; padding: 12px; margin-bottom: 12px; background: var(--search-bar); border: 1px solid transparent; border-radius: 8px; color: white; outline: none; }
 
-        /* Main App Interface */
         #main-app { display: none; flex-direction: column; height: 100%; }
         .top-bar { background: var(--header); padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; }
         
-        /* List & Menu Container */
         #list-container { flex: 1; overflow-y: auto; padding-bottom: 80px; }
 
-        /* Group Menu Icons */
         .group-option { display: flex; padding: 15px; align-items: center; gap: 15px; border-bottom: 1px solid #121b22; cursor: pointer; }
-        .group-option:active { background: #202c33; }
         .opt-icon { width: 48px; height: 48px; background: var(--wa-green); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; }
         
-        /* List Items (Chats/Online) */
         .list-item { display: flex; padding: 15px; align-items: center; gap: 15px; border-bottom: 1px solid #121b22; cursor: pointer; }
         .avatar { width: 50px; height: 50px; background: #333; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; }
 
-        /* Bottom Nav (Purane Icons) */
+        /* Individual Chat Overlay */
+        #chat-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg); z-index: 2000; display: none; flex-direction: column; }
+        #chat-messages { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 8px; background: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); background-color: #0b141a; background-blend-mode: overlay; }
+        .msg { max-width: 80%; padding: 8px 12px; border-radius: 8px; font-size: 14px; color: white; }
+        .msg.me { align-self: flex-end; background: var(--bubble-me); }
+        .msg.other { align-self: flex-start; background: var(--bubble-other); }
+
+        .input-area { background: var(--header); padding: 10px; display: flex; align-items: center; gap: 10px; }
+        #msgInput { flex: 1; background: var(--search-bar); border: none; padding: 12px; border-radius: 25px; color: white; outline: none; margin-bottom: 0;}
+
         .bottom-nav { background: var(--header); display: flex; padding: 10px 0; border-top: 1px solid #222; position: fixed; bottom: 0; width: 100%; z-index: 500; }
         .nav-item { flex: 1; text-align: center; color: var(--text-grey); font-size: 12px; cursor: pointer; }
         .nav-item.active { color: var(--text-white); font-weight: bold; }
@@ -90,14 +92,26 @@
                 <span class="material-icons" onclick="location.reload()">logout</span>
             </div>
         </div>
-
         <div id="list-container"></div>
-
         <div class="bottom-nav">
             <div class="nav-item" onclick="showOnlineTab()"><span class="material-icons nav-icon">data_usage</span>Online</div>
             <div class="nav-item active" onclick="showChatsTab()"><span class="material-icons nav-icon">forum</span>Chats</div>
             <div class="nav-item" onclick="showGroupMenu()"><span class="material-icons nav-icon">group</span>Group</div>
             <div class="nav-item"><span class="material-icons nav-icon">call</span>Call</div>
+        </div>
+    </div>
+
+    <div id="chat-screen">
+        <div class="top-bar">
+            <div style="display:flex; align-items:center; gap:10px;">
+                <span class="material-icons" onclick="closeChat()">arrow_back</span>
+                <b id="chatting-with">Name</b>
+            </div>
+        </div>
+        <div id="chat-messages"></div>
+        <div class="input-area">
+            <input type="text" id="msgInput" placeholder="Message..." onkeypress="if(event.key==='Enter') sendMessage()">
+            <span class="material-icons" style="color:var(--wa-green)" onclick="sendMessage()">send</span>
         </div>
     </div>
 
@@ -113,7 +127,7 @@
         };
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
-        let myName = "";
+        let myName = "", targetFriend = "";
 
         function showScreen(id) {
             document.querySelectorAll('.full-screen').forEach(s => s.classList.add('hidden'));
@@ -133,38 +147,36 @@
         }
 
         function setActiveNav(index) {
-            document.querySelectorAll('.nav-item').forEach((el, i) => {
-                el.classList.toggle('active', (i + 1) === index);
-            });
+            document.querySelectorAll('.nav-item').forEach((el, i) => el.classList.toggle('active', (i + 1) === index));
         }
 
-        // --- CLEAR CONTAINER (The Fix) ---
         function clearView() {
             document.getElementById('list-container').innerHTML = '';
-            // Sabhi Firebase listeners ko off karna zaroori hai tab change hone par
             database.ref('online_status').off();
         }
 
-        // --- CHATS TAB ---
         function showChatsTab() {
             clearView();
             setActiveNav(2);
             document.getElementById('app-title').innerText = "WhatsApp";
-            document.getElementById('list-container').innerHTML = `
-                <div class="list-item">
+            const container = document.getElementById('list-container');
+            // Static Friends List (Purani Wali)
+            container.innerHTML = `
+                <div class="list-item" onclick="openChat('Aman')">
                     <div class="avatar">A</div>
-                    <div><b>Aman</b><p style="font-size:12px;color:var(--text-grey)">Online</p></div>
+                    <div><b>Aman</b><p style="font-size:12px;color:var(--text-grey)">Click to chat</p></div>
+                </div>
+                <div class="list-item" onclick="openChat('Rahul')">
+                    <div class="avatar">R</div>
+                    <div><b>Rahul</b><p style="font-size:12px;color:var(--text-grey)">Offline</p></div>
                 </div>`;
         }
 
-        // --- ONLINE TAB ---
         function showOnlineTab() {
             clearView();
             setActiveNav(1);
             document.getElementById('app-title').innerText = "Online";
             const container = document.getElementById('list-container');
-            container.innerHTML = "<p style='padding:15px; color:var(--text-grey)'>Checking active users...</p>";
-
             database.ref('online_status').on('value', (snap) => {
                 container.innerHTML = '';
                 let hasUsers = false;
@@ -172,7 +184,7 @@
                     if(c.key !== myName) {
                         hasUsers = true;
                         container.innerHTML += `
-                            <div class="list-item">
+                            <div class="list-item" onclick="openChat('${c.key}')">
                                 <div class="avatar" style="border:2px solid var(--wa-green)">${c.key[0].toUpperCase()}</div>
                                 <div><b>${c.key}</b><p style="color:var(--wa-green);font-size:12px;">Active Now</p></div>
                             </div>`;
@@ -182,22 +194,55 @@
             });
         }
 
-        // --- GROUP MENU ---
         function showGroupMenu() {
             clearView();
             setActiveNav(3);
             document.getElementById('app-title').innerText = "Groups";
             document.getElementById('list-container').innerHTML = `
-                <div class="group-option" onclick="alert('Abhi Create Group ka logic baki hai!')">
+                <div class="group-option" onclick="alert('Abhi Logic Samjha!')">
                     <div class="opt-icon"><span class="material-icons">group_add</span></div>
-                    <div><b>Create Group</b><p style="font-size:12px;color:var(--text-grey)">Naya group banayein aur dost jodein</p></div>
+                    <div><b>Create Group</b><p style="font-size:12px;color:var(--text-grey)">Naya group banayein</p></div>
                 </div>
-
-                <div class="group-option" onclick="alert('Yahan Public Groups ki list aayegi')">
+                <div class="group-option" onclick="alert('Public Groups List')">
                     <div class="opt-icon"><span class="material-icons">public</span></div>
-                    <div><b>Public Groups</b><p style="font-size:12px;color:var(--text-grey)">Duniya bhar ke groups join karein</p></div>
-                </div>
-            `;
+                    <div><b>Public Groups</b><p style="font-size:12px;color:var(--text-grey)">Duniya se judiye</p></div>
+                </div>`;
+        }
+
+        // --- PERSONAL CHAT FUNCTIONS ---
+        function openChat(name) {
+            targetFriend = name;
+            document.getElementById('chatting-with').innerText = name;
+            document.getElementById('chat-screen').style.display = 'flex';
+            loadMessages();
+        }
+
+        function closeChat() { document.getElementById('chat-screen').style.display = 'none'; }
+
+        function sendMessage() {
+            const input = document.getElementById('msgInput');
+            if(!input.value.trim()) return;
+            const chatId = [myName, targetFriend].sort().join("_");
+            database.ref('personal_chats/' + chatId).push({
+                sender: myName,
+                message: input.value,
+                time: new Date().toLocaleTimeString()
+            });
+            input.value = '';
+        }
+
+        function loadMessages() {
+            const chatId = [myName, targetFriend].sort().join("_");
+            database.ref('personal_chats/' + chatId).on('value', (snap) => {
+                const box = document.getElementById('chat-messages');
+                box.innerHTML = '';
+                snap.forEach(child => {
+                    const data = child.val();
+                    const isMe = data.sender === myName;
+                    box.innerHTML += `<div class="msg ${isMe ? 'me' : 'other'}">${data.message}</div>`;
+                });
+                box.scrollTop = box.scrollHeight;
+            });
         }
     </script>
 </body>
