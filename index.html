@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatsApp Pro - Perfect Version</title>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+    <style>
+        :root {
+            --bg: #0b141a; --header: #111b21; --search-bar: #202c33;
+            --text-white: #e9edef; --text-grey: #8696a0; --wa-green: #00a884;
+            --border: #222d34; --bubble-me: #005c4b; --bubble-other: #202c33;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: sans-serif; }
+        body { background: var(--bg); color: var(--text-white); height: 100vh; overflow: hidden; }
+
+        /* Screens Layout */
+        .full-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg); z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; text-align: center; }
+        .hidden { display: none !important; }
+
+        /* Auth UI */
+        .form-container { width: 100%; max-width: 320px; background: var(--header); padding: 25px; border-radius: 15px; border: 1px solid var(--border); }
+        .btn { width: 100%; max-width: 280px; padding: 14px; border: none; border-radius: 30px; font-size: 16px; font-weight: bold; cursor: pointer; margin-bottom: 15px; }
+        .btn-green { background: var(--wa-green); color: white; }
+        .btn-outline { background: var(--search-bar); color: white; }
+        input { width: 100%; padding: 12px; margin-bottom: 12px; background: var(--search-bar); border: 1px solid transparent; border-radius: 8px; color: white; outline: none; }
+
+        /* Main App Interface */
+        #main-app { display: none; flex-direction: column; height: 100%; }
+        .top-bar { background: var(--header); padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; }
+        
+        /* List & Menu Container */
+        #list-container { flex: 1; overflow-y: auto; padding-bottom: 80px; }
+
+        /* Group Menu Icons */
+        .group-option { display: flex; padding: 15px; align-items: center; gap: 15px; border-bottom: 1px solid #121b22; cursor: pointer; }
+        .group-option:active { background: #202c33; }
+        .opt-icon { width: 48px; height: 48px; background: var(--wa-green); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; }
+        
+        /* List Items (Chats/Online) */
+        .list-item { display: flex; padding: 15px; align-items: center; gap: 15px; border-bottom: 1px solid #121b22; cursor: pointer; }
+        .avatar { width: 50px; height: 50px; background: #333; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; }
+
+        /* Bottom Nav (Purane Icons) */
+        .bottom-nav { background: var(--header); display: flex; padding: 10px 0; border-top: 1px solid #222; position: fixed; bottom: 0; width: 100%; z-index: 500; }
+        .nav-item { flex: 1; text-align: center; color: var(--text-grey); font-size: 12px; cursor: pointer; }
+        .nav-item.active { color: var(--text-white); font-weight: bold; }
+        .nav-icon { display: block; font-size: 24px; margin-bottom: 4px; }
+    </style>
+</head>
+<body>
+
+    <div id="welcome-screen" class="full-screen">
+        <h1 style="color: var(--wa-green); margin-bottom: 30px; font-size: 40px;">WhatsApp</h1>
+        <button class="btn btn-green" onclick="showScreen('signup-screen')">Sign Up</button>
+        <button class="btn btn-outline" onclick="showScreen('login-screen')">Login</button>
+        <button class="btn btn-outline" onclick="enterApp('Guest User')">Guest Access</button>
+    </div>
+
+    <div id="signup-screen" class="full-screen hidden">
+        <div class="form-container">
+            <h3>Sign Up</h3>
+            <input type="text" id="reg-name" placeholder="Full Username">
+            <input type="text" id="reg-id" placeholder="Email/Phone">
+            <input type="password" id="reg-pass" placeholder="Password">
+            <button class="btn btn-green" onclick="handleSignUp()">Register</button>
+            <p onclick="showScreen('welcome-screen')" style="cursor:pointer; margin-top:10px; font-size: 12px;">← Back</p>
+        </div>
+    </div>
+
+    <div id="login-screen" class="full-screen hidden">
+        <div class="form-container">
+            <h3>Login</h3>
+            <input type="text" id="log-name" placeholder="Username">
+            <input type="text" id="log-id" placeholder="Email/Phone">
+            <input type="password" id="log-pass" placeholder="Password">
+            <button class="btn btn-green" onclick="handleLogin()">Login</button>
+            <p onclick="showScreen('welcome-screen')" style="cursor:pointer; margin-top:10px; font-size: 12px;">← Back</p>
+        </div>
+    </div>
+
+    <div id="main-app">
+        <div class="top-bar">
+            <h2 id="app-title">WhatsApp</h2>
+            <div style="display:flex; gap:20px; color:var(--text-grey);">
+                <span class="material-icons">photo_camera</span>
+                <span class="material-icons">search</span>
+                <span class="material-icons" onclick="location.reload()">logout</span>
+            </div>
+        </div>
+
+        <div id="list-container"></div>
+
+        <div class="bottom-nav">
+            <div class="nav-item" onclick="showOnlineTab()"><span class="material-icons nav-icon">data_usage</span>Online</div>
+            <div class="nav-item active" onclick="showChatsTab()"><span class="material-icons nav-icon">forum</span>Chats</div>
+            <div class="nav-item" onclick="showGroupMenu()"><span class="material-icons nav-icon">group</span>Group</div>
+            <div class="nav-item"><span class="material-icons nav-icon">call</span>Call</div>
+        </div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyCfORsuk_DsN-66ODQL02E9VH6tBKpDYL4",
+            authDomain: "my-gallary-5b358.firebaseapp.com",
+            databaseURL: "https://my-gallary-5b358-default-rtdb.firebaseio.com",
+            projectId: "my-gallary-5b358",
+            storageBucket: "my-gallary-5b358.firebasestorage.app",
+            messagingSenderId: "390106070814",
+            appId: "1:390106070814:web:5e18540092f5fe1d34930f"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+        let myName = "";
+
+        function showScreen(id) {
+            document.querySelectorAll('.full-screen').forEach(s => s.classList.add('hidden'));
+            document.getElementById(id).classList.remove('hidden');
+        }
+
+        function handleSignUp() { const name = document.getElementById('reg-name').value.trim(); if(name) enterApp(name); }
+        function handleLogin() { const name = document.getElementById('log-name').value.trim(); if(name) enterApp(name); }
+
+        function enterApp(name) {
+            myName = name;
+            database.ref('online_status/' + name).set(true);
+            database.ref('online_status/' + name).onDisconnect().remove();
+            showScreen('main-app');
+            document.getElementById('main-app').style.display = 'flex';
+            showChatsTab();
+        }
+
+        function setActiveNav(index) {
+            document.querySelectorAll('.nav-item').forEach((el, i) => {
+                el.classList.toggle('active', (i + 1) === index);
+            });
+        }
+
+        // --- CLEAR CONTAINER (The Fix) ---
+        function clearView() {
+            document.getElementById('list-container').innerHTML = '';
+            // Sabhi Firebase listeners ko off karna zaroori hai tab change hone par
+            database.ref('online_status').off();
+        }
+
+        // --- CHATS TAB ---
+        function showChatsTab() {
+            clearView();
+            setActiveNav(2);
+            document.getElementById('app-title').innerText = "WhatsApp";
+            document.getElementById('list-container').innerHTML = `
+                <div class="list-item">
+                    <div class="avatar">A</div>
+                    <div><b>Aman</b><p style="font-size:12px;color:var(--text-grey)">Online</p></div>
+                </div>`;
+        }
+
+        // --- ONLINE TAB ---
+        function showOnlineTab() {
+            clearView();
+            setActiveNav(1);
+            document.getElementById('app-title').innerText = "Online";
+            const container = document.getElementById('list-container');
+            container.innerHTML = "<p style='padding:15px; color:var(--text-grey)'>Checking active users...</p>";
+
+            database.ref('online_status').on('value', (snap) => {
+                container.innerHTML = '';
+                let hasUsers = false;
+                snap.forEach(c => {
+                    if(c.key !== myName) {
+                        hasUsers = true;
+                        container.innerHTML += `
+                            <div class="list-item">
+                                <div class="avatar" style="border:2px solid var(--wa-green)">${c.key[0].toUpperCase()}</div>
+                                <div><b>${c.key}</b><p style="color:var(--wa-green);font-size:12px;">Active Now</p></div>
+                            </div>`;
+                    }
+                });
+                if(!hasUsers) container.innerHTML = "<p style='padding:20px'>No users online.</p>";
+            });
+        }
+
+        // --- GROUP MENU ---
+        function showGroupMenu() {
+            clearView();
+            setActiveNav(3);
+            document.getElementById('app-title').innerText = "Groups";
+            document.getElementById('list-container').innerHTML = `
+                <div class="group-option" onclick="alert('Abhi Create Group ka logic baki hai!')">
+                    <div class="opt-icon"><span class="material-icons">group_add</span></div>
+                    <div><b>Create Group</b><p style="font-size:12px;color:var(--text-grey)">Naya group banayein aur dost jodein</p></div>
+                </div>
+
+                <div class="group-option" onclick="alert('Yahan Public Groups ki list aayegi')">
+                    <div class="opt-icon"><span class="material-icons">public</span></div>
+                    <div><b>Public Groups</b><p style="font-size:12px;color:var(--text-grey)">Duniya bhar ke groups join karein</p></div>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>
