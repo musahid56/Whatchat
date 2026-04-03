@@ -2,117 +2,96 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WhatsApp Pro - Perfect Version</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>WhatsApp Pro - Smooth</title>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
     <style>
         :root {
-            --bg: #0b141a; --header: #111b21; --search-bar: #202c33;
-            --text-white: #e9edef; --text-grey: #8696a0; --wa-green: #00a884;
-            --border: #222d34; --bubble-me: #005c4b; --bubble-other: #202c33;
+            --bg: #000000; --header: #121b22; --search-bar: #1a1a1a;
+            --text-white: #e9edef; --text-grey: #8696a0; --wa-red: #c62828; 
+            --bubble-me: #005c4b; --bubble-other: #202c33;
         }
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: sans-serif; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: sans-serif; -webkit-tap-highlight-color: transparent; }
         body { background: var(--bg); color: var(--text-white); height: 100vh; overflow: hidden; }
 
-        .full-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg); z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; text-align: center; }
+        /* Smooth Transition Class */
+        .fade-in { animation: fadeIn 0.3s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        .full-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg); z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; transition: 0.3s; }
         .hidden { display: none !important; }
 
-        .form-container { width: 100%; max-width: 320px; background: var(--header); padding: 25px; border-radius: 15px; border: 1px solid var(--border); }
+        .form-container { width: 100%; max-width: 320px; background: #111; padding: 25px; border-radius: 15px; text-align: center; border: 1px solid #222; }
         .btn { width: 100%; max-width: 280px; padding: 14px; border: none; border-radius: 30px; font-size: 16px; font-weight: bold; cursor: pointer; margin-bottom: 15px; }
-        .btn-green { background: var(--wa-green); color: white; }
-        .btn-outline { background: var(--search-bar); color: white; }
-        input { width: 100%; padding: 12px; margin-bottom: 12px; background: var(--search-bar); border: 1px solid transparent; border-radius: 8px; color: white; outline: none; }
+        .btn-green { background: var(--wa-red); color: white; }
+        input { width: 100%; padding: 12px; margin-bottom: 12px; background: var(--search-bar); border: 1px solid #333; border-radius: 8px; color: white; outline: none; }
 
-        #main-app { display: none; flex-direction: column; height: 100%; }
-        .top-bar { background: var(--header); padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; }
+        #main-app { display: none; flex-direction: column; height: 100%; background: #000; }
+        .top-bar { background: var(--header); padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #222; }
         
-        #list-container { flex: 1; overflow-y: auto; padding-bottom: 80px; }
+        #list-container { flex: 1; overflow-y: auto; padding-bottom: 90px; }
 
         .group-option { display: flex; padding: 15px; align-items: center; gap: 15px; border-bottom: 1px solid #121b22; cursor: pointer; }
-        .opt-icon { width: 48px; height: 48px; background: var(--wa-green); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; }
+        .opt-icon { width: 48px; height: 48px; background: var(--wa-red); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; }
         
         .list-item { display: flex; padding: 15px; align-items: center; gap: 15px; border-bottom: 1px solid #121b22; cursor: pointer; }
         .avatar { width: 50px; height: 50px; background: #333; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; }
 
-        /* Individual Chat Overlay */
-        #chat-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg); z-index: 2000; display: none; flex-direction: column; }
-        #chat-messages { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 8px; background: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); background-color: #0b141a; background-blend-mode: overlay; }
+        .bottom-nav { background: var(--header); display: flex; padding: 8px 0; border-top: 1px solid #222; position: fixed; bottom: 0; width: 100%; z-index: 500; height: 75px; }
+        .nav-item { flex: 1; text-align: center; color: var(--text-grey); font-size: 12px; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; }
+        .icon-wrapper { padding: 4px 20px; border-radius: 20px; transition: 0.3s; display: flex; align-items: center; justify-content: center; }
+        .nav-icon { font-size: 24px; color: var(--text-white); }
+        .nav-item.active .icon-wrapper { background: var(--wa-red); }
+        .nav-item.active { color: var(--text-white); font-weight: bold; }
+
+        /* Chat Window Slide Transition */
+        #chat-screen { position: fixed; top: 0; right: -100%; width: 100%; height: 100%; background: #000; z-index: 2000; display: flex; flex-direction: column; transition: right 0.3s ease; }
+        #chat-screen.active { right: 0; }
+        #chat-messages { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 8px; background: #000; }
         .msg { max-width: 80%; padding: 8px 12px; border-radius: 8px; font-size: 14px; color: white; }
         .msg.me { align-self: flex-end; background: var(--bubble-me); }
         .msg.other { align-self: flex-start; background: var(--bubble-other); }
 
-        .input-area { background: var(--header); padding: 10px; display: flex; align-items: center; gap: 10px; }
-        #msgInput { flex: 1; background: var(--search-bar); border: none; padding: 12px; border-radius: 25px; color: white; outline: none; margin-bottom: 0;}
-
-        .bottom-nav { background: var(--header); display: flex; padding: 10px 0; border-top: 1px solid #222; position: fixed; bottom: 0; width: 100%; z-index: 500; }
-        .nav-item { flex: 1; text-align: center; color: var(--text-grey); font-size: 12px; cursor: pointer; }
-        .nav-item.active { color: var(--text-white); font-weight: bold; }
-        .nav-icon { display: block; font-size: 24px; margin-bottom: 4px; }
+        .input-area { background: var(--header); padding: 10px; display: flex; align-items: center; gap: 10px; border-top: 1px solid #222;}
+        #msgInput { flex: 1; background: var(--search-bar); border: none; padding: 12px; border-radius: 25px; color: white; outline: none; }
     </style>
 </head>
 <body>
 
     <div id="welcome-screen" class="full-screen">
-        <h1 style="color: var(--wa-green); margin-bottom: 30px; font-size: 40px;">WhatsApp</h1>
+        <h1 style="color: var(--wa-red); margin-bottom: 30px; font-size: 40px;">WhatsApp</h1>
         <button class="btn btn-green" onclick="showScreen('signup-screen')">Sign Up</button>
         <button class="btn btn-outline" onclick="showScreen('login-screen')">Login</button>
-        <button class="btn btn-outline" onclick="enterApp('Guest User')">Guest Access</button>
+        <button class="btn btn-outline" onclick="enterApp('User')">Guest Access</button>
     </div>
 
-    <div id="signup-screen" class="full-screen hidden">
-        <div class="form-container">
-            <h3>Sign Up</h3>
-            <input type="text" id="reg-name" placeholder="Full Username">
-            <input type="text" id="reg-id" placeholder="Email/Phone">
-            <input type="password" id="reg-pass" placeholder="Password">
-            <button class="btn btn-green" onclick="handleSignUp()">Register</button>
-            <p onclick="showScreen('welcome-screen')" style="cursor:pointer; margin-top:10px; font-size: 12px;">← Back</p>
-        </div>
-    </div>
-
-    <div id="login-screen" class="full-screen hidden">
-        <div class="form-container">
-            <h3>Login</h3>
-            <input type="text" id="log-name" placeholder="Username">
-            <input type="text" id="log-id" placeholder="Email/Phone">
-            <input type="password" id="log-pass" placeholder="Password">
-            <button class="btn btn-green" onclick="handleLogin()">Login</button>
-            <p onclick="showScreen('welcome-screen')" style="cursor:pointer; margin-top:10px; font-size: 12px;">← Back</p>
-        </div>
-    </div>
+    <div id="signup-screen" class="full-screen hidden"><div class="form-container"><h3>Sign Up</h3><input type="text" id="reg-name" placeholder="Name"><input type="text" id="reg-id" placeholder="ID"><input type="password" id="reg-pass" placeholder="Pass"><button class="btn btn-green" onclick="handleSignUp()">Register</button><p onclick="showScreen('welcome-screen')" style="cursor:pointer; color:var(--text-grey)">← Back</p></div></div>
+    <div id="login-screen" class="full-screen hidden"><div class="form-container"><h3>Login</h3><input type="text" id="log-name" placeholder="Name"><input type="text" id="log-id" placeholder="ID"><input type="password" id="log-pass" placeholder="Pass"><button class="btn btn-green" onclick="handleLogin()">Login</button><p onclick="showScreen('welcome-screen')" style="cursor:pointer; color:var(--text-grey)">← Back</p></div></div>
 
     <div id="main-app">
         <div class="top-bar">
-            <h2 id="app-title">WhatsApp</h2>
+            <h2 id="dynamic-title">WhatsApp <span id="u-name" style="color:var(--wa-red)"></span></h2>
             <div style="display:flex; gap:20px; color:var(--text-grey);">
                 <span class="material-icons">photo_camera</span>
                 <span class="material-icons">search</span>
                 <span class="material-icons" onclick="location.reload()">logout</span>
             </div>
         </div>
-        <div id="list-container"></div>
+        <div id="list-container" class="fade-in"></div>
         <div class="bottom-nav">
-            <div class="nav-item" onclick="showOnlineTab()"><span class="material-icons nav-icon">data_usage</span>Online</div>
-            <div class="nav-item active" onclick="showChatsTab()"><span class="material-icons nav-icon">forum</span>Chats</div>
-            <div class="nav-item" onclick="showGroupMenu()"><span class="material-icons nav-icon">group</span>Group</div>
-            <div class="nav-item"><span class="material-icons nav-icon">call</span>Call</div>
+            <div class="nav-item" onclick="showOnlineTab()"><div class="icon-wrapper"><span class="material-icons nav-icon">data_usage</span></div>Online</div>
+            <div class="nav-item active" onclick="showChatsTab()"><div class="icon-wrapper"><span class="material-icons nav-icon">forum</span></div>Chats</div>
+            <div class="nav-item" onclick="showGroupMenu()"><div class="icon-wrapper"><span class="material-icons nav-icon">group</span></div>Group</div>
+            <div class="nav-item" onclick="showCallsTab()"><div class="icon-wrapper"><span class="material-icons nav-icon">call</span></div>Call</div>
         </div>
     </div>
 
     <div id="chat-screen">
-        <div class="top-bar">
-            <div style="display:flex; align-items:center; gap:10px;">
-                <span class="material-icons" onclick="closeChat()">arrow_back</span>
-                <b id="chatting-with">Name</b>
-            </div>
-        </div>
+        <div class="top-bar"><span class="material-icons" onclick="closeChat()">arrow_back</span><b id="chatting-with">Name</b></div>
         <div id="chat-messages"></div>
-        <div class="input-area">
-            <input type="text" id="msgInput" placeholder="Message..." onkeypress="if(event.key==='Enter') sendMessage()">
-            <span class="material-icons" style="color:var(--wa-green)" onclick="sendMessage()">send</span>
-        </div>
+        <div class="input-area"><input type="text" id="msgInput" placeholder="Message..." onkeypress="if(event.key==='Enter') sendMessage()"><span class="material-icons" style="color:var(--wa-red)" onclick="sendMessage()">send</span></div>
     </div>
 
     <script>
@@ -129,13 +108,16 @@
         const database = firebase.database();
         let myName = "", targetFriend = "";
 
+        window.onpopstate = () => {
+            if (document.getElementById('chat-screen').classList.contains('active')) closeChat(true);
+            else showScreen('welcome-screen');
+        };
+
         function showScreen(id) {
             document.querySelectorAll('.full-screen').forEach(s => s.classList.add('hidden'));
             document.getElementById(id).classList.remove('hidden');
+            if(id !== 'welcome-screen') history.pushState({page: id}, id, "");
         }
-
-        function handleSignUp() { const name = document.getElementById('reg-name').value.trim(); if(name) enterApp(name); }
-        function handleLogin() { const name = document.getElementById('log-name').value.trim(); if(name) enterApp(name); }
 
         function enterApp(name) {
             myName = name;
@@ -146,8 +128,17 @@
             showChatsTab();
         }
 
+        function handleSignUp() { const n = document.getElementById('reg-name').value.trim(); if(n) enterApp(n); }
+        function handleLogin() { const n = document.getElementById('log-name').value.trim(); if(n) enterApp(n); }
+
         function setActiveNav(index) {
-            document.querySelectorAll('.nav-item').forEach((el, i) => el.classList.toggle('active', (i + 1) === index));
+            const navItems = document.querySelectorAll('.nav-item');
+            navItems.forEach((el, i) => el.classList.toggle('active', (i + 1) === index));
+            // Add fade animation on list update
+            const container = document.getElementById('list-container');
+            container.classList.remove('fade-in');
+            void container.offsetWidth; // Trigger reflow
+            container.classList.add('fade-in');
         }
 
         function clearView() {
@@ -155,92 +146,57 @@
             database.ref('online_status').off();
         }
 
+        function updateTitle(base) {
+            document.getElementById('dynamic-title').innerHTML = `${base} <span style="color:var(--wa-red)">(${myName})</span>`;
+        }
+
         function showChatsTab() {
-            clearView();
-            setActiveNav(2);
-            document.getElementById('app-title').innerText = "WhatsApp";
-            const container = document.getElementById('list-container');
-            // Static Friends List (Purani Wali)
-            container.innerHTML = `
-                <div class="list-item" onclick="openChat('Aman')">
-                    <div class="avatar">A</div>
-                    <div><b>Aman</b><p style="font-size:12px;color:var(--text-grey)">Click to chat</p></div>
-                </div>
-                <div class="list-item" onclick="openChat('Rahul')">
-                    <div class="avatar">R</div>
-                    <div><b>Rahul</b><p style="font-size:12px;color:var(--text-grey)">Offline</p></div>
-                </div>`;
+            clearView(); setActiveNav(2); updateTitle("WhatsApp");
+            document.getElementById('list-container').innerHTML = `
+                <div class="list-item" onclick="openChat('Aman')"><div class="avatar">A</div><div><b>Aman</b><p style="font-size:12px;color:var(--text-grey)">Online</p></div></div>`;
         }
 
         function showOnlineTab() {
-            clearView();
-            setActiveNav(1);
-            document.getElementById('app-title').innerText = "Online";
+            clearView(); setActiveNav(1); updateTitle("Online");
             const container = document.getElementById('list-container');
             database.ref('online_status').on('value', (snap) => {
                 container.innerHTML = '';
-                let hasUsers = false;
-                snap.forEach(c => {
-                    if(c.key !== myName) {
-                        hasUsers = true;
-                        container.innerHTML += `
-                            <div class="list-item" onclick="openChat('${c.key}')">
-                                <div class="avatar" style="border:2px solid var(--wa-green)">${c.key[0].toUpperCase()}</div>
-                                <div><b>${c.key}</b><p style="color:var(--wa-green);font-size:12px;">Active Now</p></div>
-                            </div>`;
-                    }
-                });
-                if(!hasUsers) container.innerHTML = "<p style='padding:20px'>No users online.</p>";
+                snap.forEach(c => { if(c.key !== myName) container.innerHTML += `<div class="list-item" onclick="openChat('${c.key}')"><div class="avatar">${c.key[0]}</div><div><b>${c.key}</b><p style="color:var(--wa-red)">Active Now</p></div></div>`; });
             });
         }
 
         function showGroupMenu() {
-            clearView();
-            setActiveNav(3);
-            document.getElementById('app-title').innerText = "Groups";
+            clearView(); setActiveNav(3); updateTitle("Groups");
             document.getElementById('list-container').innerHTML = `
-                <div class="group-option" onclick="alert('Abhi Logic Samjha!')">
-                    <div class="opt-icon"><span class="material-icons">group_add</span></div>
-                    <div><b>Create Group</b><p style="font-size:12px;color:var(--text-grey)">Naya group banayein</p></div>
-                </div>
-                <div class="group-option" onclick="alert('Public Groups List')">
-                    <div class="opt-icon"><span class="material-icons">public</span></div>
-                    <div><b>Public Groups</b><p style="font-size:12px;color:var(--text-grey)">Duniya se judiye</p></div>
-                </div>`;
+                <div class="group-option" onclick="alert('Logic Coming...')"><div class="opt-icon"><span class="material-icons">group_add</span></div><div><b>Create Group</b></div></div>
+                <div class="group-option" onclick="alert('Public Groups...')"><div class="opt-icon"><span class="material-icons">public</span></div><div><b>Public Groups</b></div></div>`;
         }
 
-        // --- PERSONAL CHAT FUNCTIONS ---
+        function showCallsTab() { clearView(); setActiveNav(4); updateTitle("Calls"); document.getElementById('list-container').innerHTML = `<p style="padding:20px; color:var(--text-grey)">No recent calls.</p>`; }
+
         function openChat(name) {
-            targetFriend = name;
-            document.getElementById('chatting-with').innerText = name;
-            document.getElementById('chat-screen').style.display = 'flex';
-            loadMessages();
+            targetFriend = name; document.getElementById('chatting-with').innerText = name;
+            document.getElementById('chat-screen').classList.add('active');
+            history.pushState({page: "chat"}, "chat", ""); loadMessages();
         }
 
-        function closeChat() { document.getElementById('chat-screen').style.display = 'none'; }
+        function closeChat(back = false) {
+            document.getElementById('chat-screen').classList.remove('active');
+            if(!back) history.back();
+        }
 
         function sendMessage() {
-            const input = document.getElementById('msgInput');
-            if(!input.value.trim()) return;
+            const input = document.getElementById('msgInput'); if(!input.value.trim()) return;
             const chatId = [myName, targetFriend].sort().join("_");
-            database.ref('personal_chats/' + chatId).push({
-                sender: myName,
-                message: input.value,
-                time: new Date().toLocaleTimeString()
-            });
+            database.ref('personal_chats/' + chatId).push({ sender: myName, message: input.value });
             input.value = '';
         }
 
         function loadMessages() {
             const chatId = [myName, targetFriend].sort().join("_");
             database.ref('personal_chats/' + chatId).on('value', (snap) => {
-                const box = document.getElementById('chat-messages');
-                box.innerHTML = '';
-                snap.forEach(child => {
-                    const data = child.val();
-                    const isMe = data.sender === myName;
-                    box.innerHTML += `<div class="msg ${isMe ? 'me' : 'other'}">${data.message}</div>`;
-                });
+                const box = document.getElementById('chat-messages'); box.innerHTML = '';
+                snap.forEach(c => { const d = c.val(); box.innerHTML += `<div class="msg ${d.sender === myName ? 'me' : 'other'}">${d.message}</div>`; });
                 box.scrollTop = box.scrollHeight;
             });
         }
